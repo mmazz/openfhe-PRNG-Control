@@ -36,7 +36,8 @@
 #include <chrono>
 #include <random>
 #include <thread>
-
+#include <iostream>
+#include <ostream>
 namespace default_prng {
 
 Blake2Engine::~Blake2Engine() {
@@ -154,6 +155,29 @@ PRNG* createEngineInstance() {
     lbcrypto::secure_memset(seed.data(), 0, bytes_to_clear);
 
     return ptr;
+}
+void Blake2Engine::SetSeed(uint64_t seed) {
+    m_last_seed = seed;
+
+    // Resetear la semilla
+    m_seed = {};  // Limpiar el array
+    m_seed[0] = seed;
+
+    // Resetear el contador
+    m_counter = 0;
+
+    // Resetear el buffer y su índice
+    m_buffer = {};
+    m_bufferIndex = 0;
+
+    // Generar el primer buffer con la nueva semilla
+    Generate();
+}
+
+void Blake2Engine::ResetToSeed() {
+    if (m_last_seed != 0) {
+        SetSeed(m_last_seed);
+    }
 }
 
 }  // namespace default_prng

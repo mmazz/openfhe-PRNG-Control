@@ -77,6 +77,9 @@ public:
     }
 
     virtual result_type operator()() = 0;
+    virtual void SetSeed(uint64_t seed) = 0;
+    virtual void ResetToSeed() = 0;
+
     virtual ~PRNG()                  = default;
 
 protected:

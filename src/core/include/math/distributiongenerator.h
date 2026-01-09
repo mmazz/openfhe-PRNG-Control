@@ -66,12 +66,10 @@ public:
      * @brief Returns a reference to the PRNG engine
      */
     static PRNG& GetPRNG();
-    uint64_t m_last_seed = 0; // Saves last seed used
 
 private:
     using GenPRNGEngineFuncPtr = PRNG* (*)();
-    void SetSeed(uint64_t seed);
-    void ResetToSeed();
+
 
 #if defined(WITH_OPENMP)
     // shared pointer to a thread-specific PRNG engine

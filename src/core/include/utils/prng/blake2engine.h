@@ -80,6 +80,8 @@ class Blake2Engine : public PRNG {
 
         return result;
     }
+    void SetSeed(uint64_t seed) override;      // ← Solo declaración
+    void ResetToSeed() override;
 
  private:
     /**
@@ -98,6 +100,7 @@ class Blake2Engine : public PRNG {
 
     // counter used as input to the hash function; gets incremented after each call
     uint64_t m_counter = 0;
+    uint64_t m_last_seed = 0; // Save last seed.
 };
 
 /**

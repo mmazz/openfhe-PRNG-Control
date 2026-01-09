@@ -109,17 +109,4 @@ PRNG& PseudoRandomNumberGenerator::GetPRNG() {
     return *m_prng;
 }
 
-void PseudoRandomNumberGenerator::SetSeed(uint64_t seed) {
-    m_last_seed = seed;
-    default_prng::Blake2Engine::blake2_seed_array_t arr{};
-    arr[0] = seed;
-    m_prng = std::make_shared<default_prng::Blake2Engine>(arr, 0);
-}
-
-void PseudoRandomNumberGenerator::ResetToSeed() {
-    if (m_last_seed != 0) {
-        SetSeed(m_last_seed);  // Reusa la lógica
-    }
-}
-
 }  // namespace lbcrypto
