@@ -42,21 +42,33 @@ make -j$(nproc)
 sudo make install
 ```
 
+---
 ### Testing
 
-To verify that works, run the example test_PRNG
+To verify that works, run the example test_PRNG:
+
+
+```bash
+./build/bin/examples/test_PRNG
+```
+---
+### 🐞 Debug
+
+To verify that works, run the example test_PRNG:
 
 
 ```bash
 ./build/bin/examples/test_PRNG
 ```
 
+
 ---
 
 ## ✨ Changes in this Fork
 
-We added **deterministic PRNG control** by modifying `blake2engine.cpp`
-→ Ensure the `FIXED_SEED` macro is **uncommented** in:
+We added **deterministic PRNG control** by modifying `blake2engine.cpp`.
+
+Its not need to **uncomment** the `FIXED_SEED` macro:
 
 ```
 src/core/lib/utils/prng/blake2engine.cpp
@@ -69,3 +81,5 @@ src/core/lib/utils/prng/blake2engine.cpp
 
 2. **`ResetToSeed()`**
     - Reestart the same seed.
+
+If **SetSeed** is not used, the default OpenFHE is used.

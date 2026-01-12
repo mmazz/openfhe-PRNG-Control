@@ -446,14 +446,30 @@ bool CKKSPackedEncoding::Decode(size_t noiseScaleDeg, double scalingFactor, Scal
         //    stddev = 0.125 * std::sqrt(GetElementRingDimension());
         //  }
         // }
+        //
+        const auto& sdcConfig = this->GetDecodeSDCConfig();
+        DecodeSDCState& sdcState = this->GetDecodeSDCState();
 
-        if (ckksDataType == REAL) {
-            //   If less than 5 bits of precision is observed
-            if (logstd > p - 5.0)
+        if (ckksDataType == REAL && sdcConfig.enableDetection) {
+
+            double sdcThreshold = sdcConfig.thresholdBits;
+
+            bool sdcDetected = (logstd > p - static_cast<float>(sdcThreshold));
+
+            // Guardamos estado (NO en params)
+            sdcState.lastSDCDetected  = sdcDetected;
+
+            if (sdcDetected && sdcConfig.enableLogging) {
+                // logging opcional
+            }
+
+            if (sdcDetected && sdcConfig.enableDetection) {
                 OPENFHE_THROW(
                     "The decryption failed because the approximation error is "
-                    "too high. Check the parameters. ");
+                    "too high. Check the parameters.");
+            }
         }
+
 
         // real values
         std::vector<std::complex<double>> realValues(slots);
@@ -473,15 +489,35 @@ bool CKKSPackedEncoding::Decode(size_t noiseScaleDeg, double scalingFactor, Scal
         // TODO we can sample Nh integers instead of 2*Nh
         // We would add sampling only for even indices of i.
         // This change should be done together with the one below.
+        int secretKeyAttackMode = sdcConfig.secretKeyMode;
+
         for (size_t i = 0; i < slots; ++i) {
             double real = scale * curValues[i].real();
             double imag = scale * curValues[i].imag();
+
             if (ckksDataType == REAL) {
-                real += scale * conjugate[i].real() + powP * d(g);
-                // real += powP * dgg.GenerateIntegerKarney(0.0, stddev);
-                imag += scale * conjugate[i].imag() + powP * d(g);
-                // imag += powP * dgg.GenerateIntegerKarney(0.0, stddev);
+                switch (secretKeyAttackMode) {
+                    case 0:  // Disable injection
+                        break;
+
+                    case 1:  // Complete injection (real + imag)
+                        real += scale * conjugate[i].real() + powP * d(g);
+                        imag += scale * conjugate[i].imag() + powP * d(g);
+                        break;
+
+                    case 2:  // Only real injection
+                        real += scale * conjugate[i].real() + powP * d(g);
+                        break;
+
+                    case 3:  // Only imaginary injection
+                        imag += scale * conjugate[i].imag() + powP * d(g);
+                        break;
+
+                    default:
+                        OPENFHE_THROW("Invalid secretKeyAttackMode value");
+                }
             }
+
             realValues[i].real(real);
             realValues[i].imag(imag);
         }

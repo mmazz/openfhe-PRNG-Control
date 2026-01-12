@@ -63,7 +63,10 @@ private:
     std::vector<std::complex<double>> value;
     double m_logError = 0.;
 
+
 public:
+
+
     // these two constructors are used inside of Decrypt
     template <typename T, typename std::enable_if<std::is_same<T, Poly::Params>::value ||
                                                       std::is_same<T, NativePoly::Params>::value ||

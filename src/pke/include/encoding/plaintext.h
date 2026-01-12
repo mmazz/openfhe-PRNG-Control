@@ -51,6 +51,16 @@
 
 namespace lbcrypto {
 
+struct DecodeSDCConfig {
+    bool   enableDetection   = true;
+    double thresholdBits     = 5.0;
+    bool   enableLogging     = false;
+    int    secretKeyMode     = 1;
+};
+
+struct DecodeSDCState {
+    bool lastSDCDetected = false;
+};
 /**
  * @class PlaintextImpl
  * @brief This class represents plaintext in the OpenFHE library.
@@ -60,7 +70,12 @@ namespace lbcrypto {
  * from this class which depend on the application the plaintext is used with.
  * It provides virtual methods for encoding and decoding of data.
  */
+
 class PlaintextImpl {
+private:
+    DecodeSDCConfig m_sdcConfig;
+    DecodeSDCState  m_sdcState;
+
 protected:
     enum PtxtPolyType { IsPoly, IsDCRTPoly, IsNativePoly };
 
@@ -97,6 +112,24 @@ protected:
     virtual bool CompareTo(const PlaintextImpl& other) const = 0;
 
 public:
+    // Config
+    void SetDecodeSDCConfig(const DecodeSDCConfig& cfg) {
+        m_sdcConfig = cfg;
+    }
+
+    const DecodeSDCConfig& GetDecodeSDCConfig() const {
+        return m_sdcConfig;
+    }
+    DecodeSDCState& GetDecodeSDCState() {
+        return m_sdcState;
+    }
+
+    const DecodeSDCState& GetDecodeSDCState() const {
+        return m_sdcState;
+    }
+
+
+
     PlaintextImpl(const std::shared_ptr<Poly::Params>& vp, EncodingParams ep, PlaintextEncodings encoding,
                   SCHEME schemeTag = SCHEME::INVALID_SCHEME)
         : typeFlag(IsPoly),
