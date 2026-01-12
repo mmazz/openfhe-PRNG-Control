@@ -18,14 +18,6 @@ cd build
 ```
 
 
-### 🐞 Debug Build
-
-```bash
-cmake -DCMAKE_INSTALL_PREFIX=$HOME/openfhe-PRNG-Control/install -DBUILD_STATIC=OFF -DBUILD_SHARED=ON \
-      -DCMAKE_BUILD_TYPE=Debug -DWITH_OPENMP=OFF -DBUILD_UNITTESTS=OFF \
-      -DBUILD_BENCHMARKS=OFF -DBUILD_EXTRAS=OFF -DCMAKE_CXX_FLAGS="-g -O0" ..
-```
-
 ### 🚀 Release Build (for campaigns)
 
 ```bash
@@ -34,14 +26,30 @@ cmake -DCMAKE_INSTALL_PREFIX=$HOME/openfhe-PRNG-Control/install -DBUILD_STATIC=O
       -DBUILD_BENCHMARKS=OFF -DBUILD_EXTRAS=OFF ..
 ```
 
+### 🐞 Debug Build
+
+```bash
+cmake -DCMAKE_INSTALL_PREFIX=$HOME/openfhe-PRNG-Control/install -DBUILD_STATIC=OFF -DBUILD_SHARED=ON \
+                             -DCMAKE_BUILD_TYPE=Debug -DWITH_OPENMP=OFF -DBUILD_UNITTESTS=OFF \
+                             -DBUILD_BENCHMARKS=OFF -DBUILD_EXTRAS=OFF -DCMAKE_CXX_FLAGS="-g -O0" ..
+
+```
+
 ### 🛠️ Compile and Install
 
 ```bash
-make -j16
+make -j$(nproc)
 sudo make install
 ```
 
+### Testing
 
+To verify that works, run the example test_PRNG
+
+
+```bash
+./build/bin/examples/test_PRNG
+```
 
 ---
 
