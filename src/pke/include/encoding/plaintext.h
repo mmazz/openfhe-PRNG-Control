@@ -50,17 +50,26 @@
 #include <vector>
 
 namespace lbcrypto {
+// Definir el enum ANTES de la estructura
+enum class SecretKeyAttackMode {
+    Disabled = 0,
+    CompleteInjection = 1,
+    RealOnly = 2,
+    ImaginaryOnly = 3
+};
 
+// Estructura actualizada
 struct DecodeSDCConfig {
-    bool   enableDetection   = true;
-    double thresholdBits     = 5.0;
-    bool   enableLogging     = false;
-    int    secretKeyMode     = 1;
+    bool enableDetection = true;
+    SecretKeyAttackMode secretKeyMode = SecretKeyAttackMode::CompleteInjection;
+    double thresholdBits = 5.0;
 };
 
 struct DecodeSDCState {
     bool lastSDCDetected = false;
 };
+
+
 /**
  * @class PlaintextImpl
  * @brief This class represents plaintext in the OpenFHE library.
@@ -73,8 +82,13 @@ struct DecodeSDCState {
 
 class PlaintextImpl {
 private:
+    static DecodeSDCConfig s_defaultConfig;
     DecodeSDCConfig m_sdcConfig;
     DecodeSDCState  m_sdcState;
+
+    void InitSDCConfig() {
+        m_sdcConfig = s_defaultConfig;
+    }
 
 protected:
     enum PtxtPolyType { IsPoly, IsDCRTPoly, IsNativePoly };
@@ -112,31 +126,16 @@ protected:
     virtual bool CompareTo(const PlaintextImpl& other) const = 0;
 
 public:
-    // Config
-    void SetDecodeSDCConfig(const DecodeSDCConfig& cfg) {
-        m_sdcConfig = cfg;
-    }
-
-    const DecodeSDCConfig& GetDecodeSDCConfig() const {
-        return m_sdcConfig;
-    }
-    DecodeSDCState& GetDecodeSDCState() {
-        return m_sdcState;
-    }
-
-    const DecodeSDCState& GetDecodeSDCState() const {
-        return m_sdcState;
-    }
-
-
-
     PlaintextImpl(const std::shared_ptr<Poly::Params>& vp, EncodingParams ep, PlaintextEncodings encoding,
                   SCHEME schemeTag = SCHEME::INVALID_SCHEME)
         : typeFlag(IsPoly),
           encodingParams(std::move(ep)),
           encodedVector(vp, Format::COEFFICIENT),
           ptxtEncoding(encoding),
-          schemeID(schemeTag) {}
+          schemeID(schemeTag)
+    {
+        InitSDCConfig();
+    }
 
     PlaintextImpl(const std::shared_ptr<NativePoly::Params>& vp, EncodingParams ep, PlaintextEncodings encoding,
                   SCHEME schemeTag = SCHEME::INVALID_SCHEME)
@@ -144,7 +143,10 @@ public:
           encodingParams(std::move(ep)),
           encodedNativeVector(vp, Format::COEFFICIENT),
           ptxtEncoding(encoding),
-          schemeID(schemeTag) {}
+          schemeID(schemeTag)
+    {
+        InitSDCConfig();
+    }
 
     // TODO: eliminate use of encodedVector in coefpackedencoding to remove encodedVector init here
     PlaintextImpl(const std::shared_ptr<DCRTPoly::Params>& vp, EncodingParams ep, PlaintextEncodings encoding,
@@ -154,7 +156,10 @@ public:
           encodedVector(vp, Format::COEFFICIENT),
           encodedVectorDCRT(vp, Format::COEFFICIENT),
           ptxtEncoding(encoding),
-          schemeID(schemeTag) {}
+          schemeID(schemeTag)
+    {
+        InitSDCConfig();
+    }
 
     PlaintextImpl(const PlaintextImpl& rhs) = default;
 
@@ -162,6 +167,44 @@ public:
 
     virtual ~PlaintextImpl() = default;
 
+
+    void SetDecodeSDCConfig(const DecodeSDCConfig& cfg) {
+        m_sdcConfig = cfg;
+    }
+
+    const DecodeSDCConfig& GetDecodeSDCConfig() const {
+        return m_sdcConfig;
+    }
+
+    DecodeSDCState& GetDecodeSDCState() {
+        return m_sdcState;
+    }
+
+    const DecodeSDCState& GetDecodeSDCState() const {
+        return m_sdcState;
+    }
+
+    // Métodos estáticos para config global
+    static void SetDefaultSDCConfig(const DecodeSDCConfig& cfg) {
+        s_defaultConfig = cfg;
+    }
+
+    static const DecodeSDCConfig& GetDefaultSDCConfig() {
+        return s_defaultConfig;
+    }
+
+    // Helper estático para crear configs
+    static DecodeSDCConfig CreateSDCConfig(
+        bool enableDetection,
+        SecretKeyAttackMode attackMode,
+        double thresholdBits) {
+
+        DecodeSDCConfig cfg;
+        cfg.enableDetection = enableDetection;
+        cfg.secretKeyMode = attackMode;
+        cfg.thresholdBits = thresholdBits;
+        return cfg;
+    }
     /**
    * GetEncodingType
    * @return Encoding type used by this plaintext
@@ -503,6 +546,54 @@ template <>
 inline DCRTPoly& PlaintextImpl::GetElement<DCRTPoly>() {
     return encodedVectorDCRT;
 }
+
+inline DecodeSDCConfig PlaintextImpl::s_defaultConfig = {
+    true,                                    // enableDetection
+    SecretKeyAttackMode::CompleteInjection,  // secretKeyMode
+    5.0                                      // thresholdBits
+};
+
+class SDCConfigHelper {
+public:
+    // Configurar instancia específica (para plaintexts ya existentes)
+    static void Configure(Plaintext& pt, const DecodeSDCConfig& cfg) {
+        if (auto ckkspt = std::dynamic_pointer_cast<PlaintextImpl>(pt)) {
+            ckkspt->SetDecodeSDCConfig(cfg);
+        } else {
+            OPENFHE_THROW("SDC configuration only supported for CKKS plaintexts");
+        }
+    }
+
+    // Configurar el default GLOBAL (para todos los plaintexts nuevos)
+    static void SetGlobalConfig(const DecodeSDCConfig& cfg) {
+        PlaintextImpl::SetDefaultSDCConfig(cfg);
+    }
+
+    // Leer la config global actual
+    static const DecodeSDCConfig& GetGlobalConfig() {
+        return PlaintextImpl::GetDefaultSDCConfig();
+    }
+
+    // Verificar si se detectó SDC en un plaintext
+    static bool WasSDCDetected(const Plaintext& pt) {
+        if (auto ckkspt = std::dynamic_pointer_cast<const PlaintextImpl>(pt)) {
+            return ckkspt->GetDecodeSDCState().lastSDCDetected;
+        }
+        return false;
+    }
+
+    // Helper para crear configs fácilmente
+    static DecodeSDCConfig MakeConfig(
+        bool enableDetection = true,
+        SecretKeyAttackMode attackMode = SecretKeyAttackMode::CompleteInjection,
+        double thresholdBits = 5.0) {
+
+        return PlaintextImpl::CreateSDCConfig(
+            enableDetection, attackMode, thresholdBits);
+    }
+};
+
+
 
 }  // namespace lbcrypto
 

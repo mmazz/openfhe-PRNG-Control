@@ -453,16 +453,10 @@ bool CKKSPackedEncoding::Decode(size_t noiseScaleDeg, double scalingFactor, Scal
         if (ckksDataType == REAL && sdcConfig.enableDetection) {
 
             double sdcThreshold = sdcConfig.thresholdBits;
-
             bool sdcDetected = (logstd > p - static_cast<float>(sdcThreshold));
 
             // Guardamos estado (NO en params)
             sdcState.lastSDCDetected  = sdcDetected;
-
-            if (sdcDetected && sdcConfig.enableLogging) {
-                // logging opcional
-            }
-
             if (sdcDetected && sdcConfig.enableDetection) {
                 OPENFHE_THROW(
                     "The decryption failed because the approximation error is "
@@ -489,33 +483,33 @@ bool CKKSPackedEncoding::Decode(size_t noiseScaleDeg, double scalingFactor, Scal
         // TODO we can sample Nh integers instead of 2*Nh
         // We would add sampling only for even indices of i.
         // This change should be done together with the one below.
-        int secretKeyAttackMode = sdcConfig.secretKeyMode;
 
         for (size_t i = 0; i < slots; ++i) {
             double real = scale * curValues[i].real();
             double imag = scale * curValues[i].imag();
 
             if (ckksDataType == REAL) {
-                switch (secretKeyAttackMode) {
-                    case 0:  // Disable injection
+                switch (static_cast<SecretKeyAttackMode>(sdcConfig.secretKeyMode)) {
+                    case SecretKeyAttackMode::Disabled:
                         break;
 
-                    case 1:  // Complete injection (real + imag)
+                    case SecretKeyAttackMode::CompleteInjection:
                         real += scale * conjugate[i].real() + powP * d(g);
                         imag += scale * conjugate[i].imag() + powP * d(g);
                         break;
 
-                    case 2:  // Only real injection
+                    case SecretKeyAttackMode::RealOnly:
                         real += scale * conjugate[i].real() + powP * d(g);
                         break;
 
-                    case 3:  // Only imaginary injection
+                    case SecretKeyAttackMode::ImaginaryOnly:
                         imag += scale * conjugate[i].imag() + powP * d(g);
                         break;
 
                     default:
-                        OPENFHE_THROW("Invalid secretKeyAttackMode value");
+                        OPENFHE_THROW("Invalid SecretKeyAttackMode value");
                 }
+
             }
 
             realValues[i].real(real);
