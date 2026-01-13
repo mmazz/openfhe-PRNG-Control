@@ -42,6 +42,32 @@ make -j$(nproc)
 sudo make install
 ```
 
+### 🛠️ Compile and Install Your Application
+
+Copy `CMakeLists.User.txt` into your project directory.
+
+For clarity, from your project root:
+
+```bash
+mkdir build
+cd build
+cp $HOME/openfhe-PRNG-Control/CMakeLists.User.txt ../CMakeLists.txt
+```
+Add your executable target at the end of `CMakeLists.txt`:
+
+```bash
+add_executable(test src/demo-simple-example.cpp)
+```
+
+Then configure and build the project:
+```bash
+cmake -DCMAKE_PREFIX_PATH=$HOME/openfhe-PRNG-Control/install/lib/OpenFHE \
+      -DBUILD_STATIC=OFF \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_CXX_FLAGS="-g -O3" ..
+make -j$(nproc)
+```
+
 ---
 ### Testing
 
