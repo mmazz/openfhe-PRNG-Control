@@ -65,3 +65,19 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 ###
 ### EXAMPLE:
 ### add_executable(test demo-simple-example.cpp)
+
+### For all the files in SRC with some utils:
+#add_library(mainlib_common src/utils_mati.cpp)
+#target_include_directories(mainlib_common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+#
+## Lista explícita de ejecutables
+#set(EXECUTABLES
+#    bitflipCampaingFull
+#    otro_programa
+#    tercer_programa
+#)
+#
+#foreach(exec_name ${EXECUTABLES})
+#    add_executable(${exec_name} src/${exec_name}.cpp)
+#    target_link_libraries(${exec_name} PRIVATE mainlib_common ${OpenFHE_SHARED_LIBRARIES})
+#endforeach()
