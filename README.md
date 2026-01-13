@@ -64,22 +64,78 @@ To verify that works, run the example test_PRNG:
 
 ---
 
-## ✨ Changes in this Fork
+## ✨ Changes in This Fork
+
+### Deterministic PRNG Control
 
 We added **deterministic PRNG control** by modifying `blake2engine.cpp`.
 
-Its not need to **uncomment** the `FIXED_SEED` macro:
+It is **not necessary** to uncomment the `FIXED_SEED` macro:
+
 
 ```
 src/core/lib/utils/prng/blake2engine.cpp
 ```
 
+
+
+The following functionality was introduced:
+
 1. **`SetSeed(uint64_t seed)`**
-   - Forces the PRNG to start from the exact given seed.
-   - Resets the internal Blake2Engine (`m_counter = 0`).
-   - Use it to guarantee deterministic outputs (e.g., reproducible noise).
+   - Forces the PRNG to start from an explicit seed.
+   - Resets the internal Blake2 engine state (`m_counter = 0`).
+   - Useful for guaranteeing deterministic behavior (e.g., reproducible noise).
 
 2. **`ResetToSeed()`**
-    - Reestart the same seed.
+   - Restarts the PRNG from the previously set seed.
 
-If **SetSeed** is not used, the default OpenFHE is used.
+If `SetSeed` is not used, OpenFHE’s default (non-deterministic) behavior is preserved.
+
+---
+
+### Secure Decoding Configuration
+
+We added support for additional configuration options in the decoding stage.
+
+This allows:
+
+1. Disabling the exception raised when decrypting a noisy plaintext.
+2. Controlling random error injection during decoding to mitigate **Secret Key attacks**.
+
+#### Usage
+
+At the application level, **before creating any plaintext or ciphertext**, configure the decoding behavior as follows:
+
+```cpp
+auto cfg = SDCConfigHelper::MakeConfig(
+    true,                           // enableDetection
+    SecretKeyAttackMode::RealOnly,   // attackMode
+    4.0                              // thresholdBits
+);
+SDCConfigHelper::SetGlobalConfig(cfg);
+```
+
+** `SecretKeyAttackMode`**
+
+The following modes are supported:
+
+```cpp
+enum class SecretKeyAttackMode {
+    Disabled = 0,
+    CompleteInjection = 1, // Default
+    RealOnly = 2,
+    ImaginaryOnly = 3
+};
+```
+Each mode defines where the random error is injected into the plaintext
+(real part, imaginary part, or both) before completing the decoding process,
+in order to prevent Secret Key attacks.
+
+**Detection Status**
+
+To check whether a noisy plaintext was detected during decoding:
+```cpp
+bool detected = SDCConfigHelper::WasSDCDetected(result);
+```
+
+
