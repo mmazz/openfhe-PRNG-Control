@@ -450,7 +450,7 @@ bool CKKSPackedEncoding::Decode(size_t noiseScaleDeg, double scalingFactor, Scal
         const auto& sdcConfig = this->GetDecodeSDCConfig();
         DecodeSDCState& sdcState = this->GetDecodeSDCState();
 
-        if (ckksDataType == REAL && sdcConfig.enableDetection) {
+        if (ckksDataType == REAL) {
 
             double sdcThreshold = sdcConfig.thresholdBits;
             bool sdcDetected = (logstd > p - static_cast<float>(sdcThreshold));
