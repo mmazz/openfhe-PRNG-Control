@@ -491,6 +491,8 @@ bool CKKSPackedEncoding::Decode(size_t noiseScaleDeg, double scalingFactor, Scal
             if (ckksDataType == REAL) {
                 switch (static_cast<SecretKeyAttackMode>(sdcConfig.secretKeyMode)) {
                     case SecretKeyAttackMode::Disabled:
+                        real += scale * conjugate[i].real();
+                        imag += scale * conjugate[i].imag();
                         break;
 
                     case SecretKeyAttackMode::CompleteInjection:
@@ -500,9 +502,11 @@ bool CKKSPackedEncoding::Decode(size_t noiseScaleDeg, double scalingFactor, Scal
 
                     case SecretKeyAttackMode::RealOnly:
                         real += scale * conjugate[i].real() + powP * d(g);
+                        imag += scale * conjugate[i].imag();
                         break;
 
                     case SecretKeyAttackMode::ImaginaryOnly:
+                        real += scale * conjugate[i].real();
                         imag += scale * conjugate[i].imag() + powP * d(g);
                         break;
 
