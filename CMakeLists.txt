@@ -147,8 +147,8 @@ if("${isSystemDir}" STREQUAL "-1")
 endif("${isSystemDir}" STREQUAL "-1")
 
 # Compiler flags
-set(C_COMPILE_FLAGS "-Wall -Werror -DOPENFHE_VERSION=${OPENFHE_VERSION}")
-set(CXX_COMPILE_FLAGS "-Wall -Werror -DOPENFHE_VERSION=${OPENFHE_VERSION}")
+set(C_COMPILE_FLAGS "-Wall -DOPENFHE_VERSION=${OPENFHE_VERSION}")
+set(CXX_COMPILE_FLAGS "-Wall  -DOPENFHE_VERSION=${OPENFHE_VERSION}")
 if(WITH_NATIVEOPT)
     string(APPEND C_COMPILE_FLAGS " -march=native")
     string(APPEND CXX_COMPILE_FLAGS " -march=native")
