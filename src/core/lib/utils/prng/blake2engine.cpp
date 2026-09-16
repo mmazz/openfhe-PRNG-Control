@@ -158,7 +158,7 @@ PRNG* createEngineInstance() {
 }
 void Blake2Engine::SetSeed(uint64_t seed) {
     m_last_seed = seed;
-
+    m_seeded = true;
     // Resetear la semilla
     m_seed = {};  // Limpiar el array
     m_seed[0] = seed;
@@ -175,9 +175,8 @@ void Blake2Engine::SetSeed(uint64_t seed) {
 }
 
 void Blake2Engine::ResetToSeed() {
-    if (m_last_seed != 0) {
+    if (!m_seeded) OPENFHE_THROW("ResetToSeed() without previous SetSeed()");
         SetSeed(m_last_seed);
-    }
 }
 
 }  // namespace default_prng

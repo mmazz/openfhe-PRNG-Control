@@ -101,6 +101,7 @@ class Blake2Engine : public PRNG {
     // counter used as input to the hash function; gets incremented after each call
     uint64_t m_counter = 0;
     uint64_t m_last_seed = 0; // Save last seed.
+    bool m_seeded = false;
 };
 
 /**
