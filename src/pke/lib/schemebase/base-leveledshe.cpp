@@ -33,7 +33,7 @@
 #include "key/privatekey.h"
 #include "schemebase/base-leveledshe.h"
 #include "schemebase/base-scheme.h"
-
+#include "fault-hook.h"
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -188,12 +188,23 @@ Ciphertext<Element> LeveledSHEBase<Element>::EvalMult(ConstCiphertext<Element>& 
     for (auto& c : cv)
         c.SetFormat(Format::EVALUATION);
 
+    // Fault sites (see fault-hook.h). Everything here is a temporary of this call.
+    fi::FlipIfStep(fi::Op::Mult, fi::MULT_D0, cv[0]);
+    fi::FlipIfStep(fi::Op::Mult, fi::MULT_D1, cv[1]);
+    fi::FlipIfStep(fi::Op::Mult, fi::MULT_D2, cv[2]);
+
     auto ab = ciphertext->GetCryptoContext()->GetScheme()->KeySwitchCore(cv[2], evalKey);
+
+    fi::FlipIfStep(fi::Op::Mult, fi::MULT_KS0, (*ab)[0]);
+    fi::FlipIfStep(fi::Op::Mult, fi::MULT_KS1, (*ab)[1]);
 
     cv[0] += (*ab)[0];
     cv[1] += (*ab)[1];
 
     cv.resize(2);
+
+    fi::FlipIfStep(fi::Op::Mult, fi::MULT_OUT_C0, cv[0]);
+    fi::FlipIfStep(fi::Op::Mult, fi::MULT_OUT_C1, cv[1]);
 
     return ciphertext;
 }

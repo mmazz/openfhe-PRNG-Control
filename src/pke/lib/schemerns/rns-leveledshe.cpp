@@ -33,7 +33,7 @@
 
 #include "cryptocontext.h"
 #include "schemerns/rns-leveledshe.h"
-
+#include "fault-hook.h"
 #include <memory>
 #include <vector>
 
@@ -58,7 +58,17 @@ void LeveledSHERNS::EvalAddInPlace(Ciphertext<DCRTPoly>& ciphertext1, ConstCiphe
     else {
         auto c2 = ciphertext2->Clone();
         AdjustForAddOrSubInPlace(ciphertext1, c2);
+        // Fault sites (see fault-hook.h). c2 is a private clone; ciphertext1 is the
+        // output register, so a flip here never leaks into the caller's operands.
+        auto& a = ciphertext1->GetElements();
+        auto& b = c2->GetElements();
+        fi::FlipIfStep(fi::Op::Add, fi::ADD_IN1_C1, a[1]);
+        fi::FlipIfStep(fi::Op::Add, fi::ADD_IN2_C1, b[1]);
+        fi::FlipIfStep(fi::Op::Add, fi::ADD_IN1_C0, a[0]);
+        fi::FlipIfStep(fi::Op::Add, fi::ADD_IN2_C0, b[0]);
         EvalAddCoreInPlace(ciphertext1, c2);
+        fi::FlipIfStep(fi::Op::Add, fi::ADD_OUT_C1, a[1]);
+        fi::FlipIfStep(fi::Op::Add, fi::ADD_OUT_C0, a[0]);
     }
 }
 
@@ -188,6 +198,11 @@ Ciphertext<DCRTPoly> LeveledSHERNS::EvalMult(ConstCiphertext<DCRTPoly>& cipherte
     auto c1 = ciphertext1->Clone();
     auto c2 = ciphertext2->Clone();
     AdjustForMultInPlace(c1, c2);
+    // Fault sites (see fault-hook.h). c1/c2 are private clones: the fault is transient.
+    fi::FlipIfStep(fi::Op::Mult, fi::MULT_IN1_C0, c1->GetElements()[0]);
+    fi::FlipIfStep(fi::Op::Mult, fi::MULT_IN1_C1, c1->GetElements()[1]);
+    fi::FlipIfStep(fi::Op::Mult, fi::MULT_IN2_C0, c2->GetElements()[0]);
+    fi::FlipIfStep(fi::Op::Mult, fi::MULT_IN2_C1, c2->GetElements()[1]);
     return EvalMultCore(c1, c2);
 }
 
